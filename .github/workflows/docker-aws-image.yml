@@ -1,0 +1,67 @@
+on:
+  push:
+    branches: [ main ]
+
+name: AWS ECR push
+
+env:
+  # CI account credentials for cross-account deployment
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_REGION: us-east-1
+  ECR_REPO_NAME: fooocus-api
+
+jobs:
+
+  set-before-script:
+    name: Set additional info
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    outputs:
+      commit-short-sha: ${{ steps.shell-execution.outputs.commit-short-sha }}
+      branch-name: ${{ steps.shell-execution.outputs.branch-name }}
+      release: ${{ steps.shell-execution.outputs.release }}
+    steps:
+      - name: Set git commit short-sha hash (GITHUB_SHA_SHORT)
+        id: set-short-hash
+        uses: FranzDiebold/github-env-vars-action@v1.2.1
+
+      - id: shell-execution
+        shell: bash
+        run: |
+          echo "::set-output name=commit-short-sha::$GITHUB_SHA_SHORT"
+
+  deploy:
+    name: Deploy
+    needs: [ set-before-script ]
+    runs-on: ubuntu-latest
+    env:
+      CI_COMMIT_SHORT_SHA: ${{ needs.set-before-script.outputs.commit-short-sha }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push the image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ env.ECR_REPO_NAME }}
+          #IMAGE_TAG: ${{ env.CI_COMMIT_SHORT_SHA }}
+          IMAGE_TAG: latest
+        run: |
+          # Build a docker container and push it to ECR 
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          echo "Pushing image to ECR..."
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
