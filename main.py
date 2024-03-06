@@ -219,6 +219,9 @@ def download_models():
                                 path_embeddings as embeddings_path,
                                 embeddings_downloads, lora_downloads)
 
+    url = "https://s3.amazonaws.com/assets.fabric.club/models/FabricCoreV1.safetensors"
+    load_file_from_url(url=url, model_dir=modelfile_path, file_name="FabricCoreV1.safetensors")
+
     for file_name, url in checkpoint_downloads.items():
         load_file_from_url(url=url, model_dir=modelfile_path, file_name=file_name)
     for file_name, url in embeddings_downloads.items():
