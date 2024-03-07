@@ -19,4 +19,4 @@ WORKDIR /app
 COPY . /app/
 
 EXPOSE 8888
-CMD python3 main.py --host 0.0.0.0 --port 8888 --queue-size 10 --base-url https://sdxl-fooocus-api.fabric.club
+CMD python3 main.py --host 0.0.0.0 --port 8888 --queue-size 10 --base-url http://sdxl-fooocus-api.fabric.club
