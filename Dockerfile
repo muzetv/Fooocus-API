@@ -1,7 +1,7 @@
 FROM nvidia/cuda:12.2.0-runtime-ubuntu22.04
 
 ARG DEBIAN_FRONTEND=noninteractive
-ENV TZ=Asia/Shanghai
+ENV TZ=America/New_York
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -y python3 python3-pip python3-virtualenv && \
@@ -18,4 +18,5 @@ WORKDIR /app
 
 COPY . /app/
 
-CMD python3 main.py --host 0.0.0.0 --port 8888
+EXPOSE 8888
+CMD python3 main.py --host 0.0.0.0 --port 8888 --queue-size 10 --base-url https://sdxl-fooocus-api.fabric.club
